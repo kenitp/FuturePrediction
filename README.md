@@ -17,7 +17,7 @@ https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_d
 * Windows 10 
 * python 3.7.5
 * pandas
-* scypi
+* scipy
 * numpy
 * matplotlib
  
