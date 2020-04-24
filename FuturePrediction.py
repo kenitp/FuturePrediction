@@ -78,7 +78,7 @@ def calcGraphRangeDate(y_array_count, range_max, popt_g, popt_l, limitTimes):
     if (popt_l[0] != np.nan):
         if (popt_l[0] < y_array_count[-1]*limitTimes):
             for x in range(range_max,0,-1):
-                if( (int(logistic_curve(x, *popt_l)) - int(logistic_curve(x-1, *popt_l))) > int(gompertz_curve(x, *popt_l) * 0.0001) ):
+                if( (int(logistic_curve(x, *popt_l)) - int(logistic_curve(x-1, *popt_l))) > int(logistic_curve(x, *popt_l) * 0.0001) ):
                     days_l = x
                     break
 
