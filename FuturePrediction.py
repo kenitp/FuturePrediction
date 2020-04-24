@@ -100,7 +100,7 @@ def createGraph(firstDate, y_array_count, title, limitTimes, popt_g, popt_l, out
         plt.plot(x_array_date, logistic_curve(x_array_index, *popt_l), label='Logistic')
     plt.plot(x_array_date[0:len(y_array_count)], y_array_count, label='Count')
     plt.legend()
-    plt.title(title)
+    plt.title(title + ' ' + datetime.today().strftime('%Y%m%d'))
     plt.gcf().autofmt_xdate()
     plt.savefig(out_dir_path + '/' + title + datetime.today().strftime('_%Y%m%d') + '.png')
 
