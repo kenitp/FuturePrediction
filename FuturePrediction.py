@@ -12,10 +12,41 @@ from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 
 class PredictParam():
-    def __init__(self, title, csvName, limitTImes):
+    coefficietnDf = []
+    def __init__(self, title, csvName, limitTimes, coefficientFile):
         self.title = title
         self.csvName = csvName
-        self.limitTimes = limitTImes
+        self.limitTimes = limitTimes
+        return
+    
+    @classmethod
+    def readCoefficient(cls, file):
+        if not (os.path.isfile(file)):
+            with open(file, 'a') as f:
+                print('Main,Date,K(G),b(G),c(G),K(L),b(L),c(L)', file=f)
+
+        df_in = pd.read_csv(file)
+        df_in['Date'] = pd.to_datetime(df_in['Date'], format='%Y-%m-%d')
+        df_in = df_in.set_index(['Main','Date'])
+        cls.coefficietnDf = df_in
+        return
+
+    @classmethod
+    def addCoefficient(cls, Main, date, popt_g, popt_l):
+        tmpDate = pd.to_datetime(date, format='%Y%m%d')
+        cls.coefficietnDf.loc[(Main, tmpDate), 'K(G)'] = popt_g[0]
+        cls.coefficietnDf.loc[(Main, tmpDate), 'b(G)'] = popt_g[1]
+        cls.coefficietnDf.loc[(Main, tmpDate), 'c(G)'] = popt_g[2]
+        cls.coefficietnDf.loc[(Main, tmpDate), 'K(L)'] = popt_l[0]
+        cls.coefficietnDf.loc[(Main, tmpDate), 'b(L)'] = popt_l[1]
+        cls.coefficietnDf.loc[(Main, tmpDate), 'c(L)'] = popt_l[2]
+        return
+
+    @classmethod
+    def saveCoefficient(cls, file):
+        cls.coefficietnDf.sort_index(inplace=True)
+        cls.coefficietnDf.to_csv(file)
+        return
 
 def gompertz_curve(x, K, b, c):
     y = K * np.power(b, np.power(math.e, (-1 * c * x)))
@@ -85,10 +116,9 @@ def calcGraphRangeDate(y_array_count, range_max, popt_g, popt_l, limitTimes):
     days = max(days_g, days_l, len(y_array_count))
     return days
 
-def createGraph(firstDate, y_array_count, title, limitTimes, popt_g, popt_l, out_dir_path):
+def createGraph(firstDate, y_array_count, title_head, title, limitTimes, popt_g, popt_l, out_dir_path):
     
     days = calcGraphRangeDate(y_array_count, 5000, popt_g, popt_l, limitTimes)
-    print('DAYS: ' + str(days))
 
     # 日付のリスト生成()
     x_array_date, x_array_index = createDateArray(firstDate, days)
@@ -100,11 +130,8 @@ def createGraph(firstDate, y_array_count, title, limitTimes, popt_g, popt_l, out
         plt.plot(x_array_date, logistic_curve(x_array_index, *popt_l), label='Logistic')
     plt.plot(x_array_date[0:len(y_array_count)], y_array_count, label='Count')
     plt.legend()
-    plt.title(title + ' ' + datetime.today().strftime('%Y%m%d'))
+    plt.title(title_head + title + ' ' + datetime.today().strftime('%Y%m%d'))
     plt.gcf().autofmt_xdate()
-    plt.savefig(out_dir_path + '/' + title + datetime.today().strftime('_%Y%m%d') + '.png')
+    plt.savefig(out_dir_path + '/' + title_head + title + datetime.today().strftime('_%Y%m%d') + '.png')
 
-    with open(out_dir_path + '/Coefficient.csv', 'a') as f:
-        print(title + ', ' + datetime.today().strftime('%Y%m%d') + ', ' + 'Gompertz' + ', ' + 'K=' + ', ' + str(popt_g[0]) + ', ' + 'b=' + ', ' + str(popt_g[0]) + ', ' + 'c=' + ', ' + str(popt_g[0]), file=f)
-        print(title + ', ' + datetime.today().strftime('%Y%m%d') + ', ' + 'Logistic' + ', ' + 'K=' + ', ' + str(popt_l[0]) + ', ' + 'b=' + ', ' + str(popt_l[0]) + ', ' + 'c=' + ', ' + str(popt_l[0]), file=f)
     return
