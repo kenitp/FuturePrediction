@@ -25,15 +25,16 @@ class PredictParam():
         if (key in self.coefficientDf.index):
             tmpDf = self.coefficientDf.fillna(1)
             tmpLastValues = tmpDf.loc[createTitle(title)].tail(1)
+            iniParam_g = [float(tmpLastValues['K(G)'].iat[0]),
+                            float(tmpLastValues['b(G)'].iat[0]),
+                            float(tmpLastValues['c(G)'].iat[0])]
+            iniParam_l = [float(tmpLastValues['K(L)'].iat[0]),
+                            float(tmpLastValues['b(L)'].iat[0]),
+                            float(tmpLastValues['c(L)'].iat[0])]
         else:
-            tmpLastValues = [str(1), str(1), str(1)]
+            iniParam_g = [1.0, 1.0, 1.0]
+            iniParam_l = [1.0, 1.0, 1.0]
 
-        iniParam_g = [float(tmpLastValues['K(G)'].iat[0]),
-                        float(tmpLastValues['b(G)'].iat[0]),
-                        float(tmpLastValues['c(G)'].iat[0])]
-        iniParam_l = [float(tmpLastValues['K(L)'].iat[0]),
-                        float(tmpLastValues['b(L)'].iat[0]),
-                        float(tmpLastValues['c(L)'].iat[0])]
         return iniParam_g, iniParam_l
 
     @classmethod
