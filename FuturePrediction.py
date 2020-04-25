@@ -12,13 +12,30 @@ from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 
 class PredictParam():
-    coefficietnDf = []
+    coefficientDf = []
     def __init__(self, title, csvName, limitTimes, coefficientFile):
         self.title = title
         self.csvName = csvName
         self.limitTimes = limitTimes
+        self.iniParam_g, self.iniParam_l = self.getIniParams(title)
         return
-    
+
+    def getIniParams(self, title):
+        key = createTitle(title)
+        if (key in self.coefficientDf.index):
+            tmpDf = self.coefficientDf.fillna(1)
+            tmpLastValues = tmpDf.loc[createTitle(title)].tail(1)
+        else:
+            tmpLastValues = [str(1), str(1), str(1)]
+
+        iniParam_g = [float(tmpLastValues['K(G)'].iat[0]),
+                        float(tmpLastValues['b(G)'].iat[0]),
+                        float(tmpLastValues['c(G)'].iat[0])]
+        iniParam_l = [float(tmpLastValues['K(L)'].iat[0]),
+                        float(tmpLastValues['b(L)'].iat[0]),
+                        float(tmpLastValues['c(L)'].iat[0])]
+        return iniParam_g, iniParam_l
+
     @classmethod
     def readCoefficient(cls, file):
         if not (os.path.isfile(file)):
@@ -28,24 +45,24 @@ class PredictParam():
         df_in = pd.read_csv(file)
         df_in['Date'] = pd.to_datetime(df_in['Date'], format='%Y-%m-%d')
         df_in = df_in.set_index(['Main','Date'])
-        cls.coefficietnDf = df_in
+        cls.coefficientDf = df_in
         return
 
     @classmethod
     def addCoefficient(cls, Main, date, popt_g, popt_l):
         tmpDate = pd.to_datetime(date, format='%Y%m%d')
-        cls.coefficietnDf.loc[(Main, tmpDate), 'K(G)'] = popt_g[0]
-        cls.coefficietnDf.loc[(Main, tmpDate), 'b(G)'] = popt_g[1]
-        cls.coefficietnDf.loc[(Main, tmpDate), 'c(G)'] = popt_g[2]
-        cls.coefficietnDf.loc[(Main, tmpDate), 'K(L)'] = popt_l[0]
-        cls.coefficietnDf.loc[(Main, tmpDate), 'b(L)'] = popt_l[1]
-        cls.coefficietnDf.loc[(Main, tmpDate), 'c(L)'] = popt_l[2]
+        cls.coefficientDf.loc[(Main, tmpDate), 'K(G)'] = popt_g[0]
+        cls.coefficientDf.loc[(Main, tmpDate), 'b(G)'] = popt_g[1]
+        cls.coefficientDf.loc[(Main, tmpDate), 'c(G)'] = popt_g[2]
+        cls.coefficientDf.loc[(Main, tmpDate), 'K(L)'] = popt_l[0]
+        cls.coefficientDf.loc[(Main, tmpDate), 'b(L)'] = popt_l[1]
+        cls.coefficientDf.loc[(Main, tmpDate), 'c(L)'] = popt_l[2]
         return
 
     @classmethod
     def saveCoefficient(cls, file):
-        cls.coefficietnDf.sort_index(inplace=True)
-        cls.coefficietnDf.to_csv(file)
+        cls.coefficientDf.sort_index(inplace=True)
+        cls.coefficientDf.to_csv(file)
         return
 
 def gompertz_curve(x, K, b, c):
@@ -77,17 +94,21 @@ def createTitle(titleList):
             title = title + '-' + titleList[1]
     return title
 
-def calcCoefficients(y_array_count):
+def calcCoefficients(param, y_array_count):
     x_array_index = createIndex(len(y_array_count))
 
-    param_ini = (y_array_count[-1], 1, 1)
+    param_ini = param.iniParam_g
+    if (param_ini[0] == 1):
+        param_ini[0] = y_array_count[-1]
     popt_g, pcov_g = curve_fit(gompertz_curve, x_array_index, y_array_count, p0=param_ini, maxfev=100000000)
     if (np.isnan(popt_g[0])):
         print('Gompertz: ' + 'K = NaN')
     else:
         print('Gompertz: ' + 'K = '+ str(int(popt_g[0])))
 
-    param_ini = (y_array_count[-1], 1, 1)
+    param_ini = param.iniParam_l
+    if (param_ini[0] == 1):
+        param_ini[0] = y_array_count[-1]
     popt_l, pcov_l = curve_fit(logistic_curve, x_array_index, y_array_count, p0=param_ini, maxfev=100000000)
     if (np.isnan(popt_l[0])):
         print('Logistic: ' + 'K = NaN')
