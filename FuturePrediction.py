@@ -154,6 +154,7 @@ def createGraph(firstDate, y_array_count, title_head, title, limitTimes, popt_g,
     plt.legend()
     plt.title(title_head + title + ' ' + datetime.today().strftime('%Y%m%d'))
     plt.gcf().autofmt_xdate()
-    plt.savefig(out_dir_path + '/' + title_head + title + datetime.today().strftime('_%Y%m%d') + '.png')
+    plt.savefig(out_dir_path + '/' + title_head + title.replace('*', '') + datetime.today().strftime('_%Y%m%d') + '.png')
+    plt.close()
 
     return
