@@ -37,6 +37,8 @@ class PredictParam():
         self.r_squared = {}
         self.r_squared_match = ''
         for key, func in self.predictFunc.items():
+            if (self.iniParams.get(key)[0] == 1):
+                self.iniParams.get(key)[0] = self.y_array_count[-1]
             popt, pcov, r_squared = self.__calcCurveFitting(self.iniParams.get(key), self.y_array_count, func)
             self.popt[key] = popt
             self.pcov[key] = pcov
@@ -71,6 +73,7 @@ class PredictParam():
 
     def __createGraph(self, title_head, title, out_dir_path):
         days = self.__calcGraphRangeDate(self.y_array_count, 5000, self.popt, self.limitTimes)
+        print('DAYS: ' + str(days))
 
         # 日付のリスト生成()
         x_array_date, x_array_index = self.createDateArray(self.firstDate, days)
@@ -120,7 +123,7 @@ class PredictParam():
         if not (os.path.isfile(file)):
             col = ''
             for key, func in cls.predictFunc.items():
-                col = col + ',K(' + key[0] + '),b(' + key[0] + '),c(' + key[0] + ')'
+                col = col + ',K(' + key[0] + '),b(' + key[0] + '),c(' + key[0] + '),R2(' + key[0] + ')'
             with open(file, 'a') as f:
                 print('Main,Date' + col, file=f)
 
@@ -131,13 +134,14 @@ class PredictParam():
         return
 
     @classmethod
-    def addCoefficient(cls, Main, date, popt):
+    def addCoefficient(cls, Main, date, popt, r_squared):
         tmpDate = pd.to_datetime(date, format='%Y%m%d')
 
         for key, value in popt.items():
-            cls.coefficientDf.loc[(Main, tmpDate), 'K(' + key[0] + ')'] = value[0]
-            cls.coefficientDf.loc[(Main, tmpDate), 'b(' + key[0] + ')'] = value[1]
-            cls.coefficientDf.loc[(Main, tmpDate), 'c(' + key[0] + ')'] = value[2]
+            cls.coefficientDf.loc[(Main, tmpDate), 'K('  + key[0] + ')'] = value[0]
+            cls.coefficientDf.loc[(Main, tmpDate), 'b('  + key[0] + ')'] = value[1]
+            cls.coefficientDf.loc[(Main, tmpDate), 'c('  + key[0] + ')'] = value[2]
+            cls.coefficientDf.loc[(Main, tmpDate), 'R2(' + key[0] + ')'] = r_squared.get(key)
         return
 
     @classmethod
@@ -157,8 +161,6 @@ class PredictParam():
     @staticmethod
     def __calcCurveFitting(param_ini, y_array_count, curve_func):
         x_array_index = createIndex(len(y_array_count))
-        if (param_ini[0] == 1):
-            param_ini[0] = y_array_count[-1]
         popt, pcov = curve_fit(curve_func, x_array_index, y_array_count, p0=param_ini, maxfev=100000000)
 
         if not np.isnan(popt[0]):
@@ -172,7 +174,7 @@ class PredictParam():
 
     @staticmethod
     def __calcOptimalRangeDate(y_array_count, range_max, popt, limitTimes, fit_func):
-        days = range_max
+        days = len(y_array_count)
         if (popt[0] != np.nan):
             if (popt[0] < y_array_count[-1]*limitTimes):
                 for x in range(range_max,0,-1):

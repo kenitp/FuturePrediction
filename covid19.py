@@ -37,7 +37,7 @@ def main():
         title_head = 'Covid-19_'
         print('[START]: ' + title)
         param.doPredict(title_head, title , out_dir_path)
-        Covid19Param.addCoefficient(title, datetime.today().strftime('%Y%m%d'), param.popt)
+        Covid19Param.addCoefficient(title, datetime.today().strftime('%Y%m%d'), param.popt, param.r_squared)
         print('[END]: ' + title + '\r\n')
 
     Covid19Param.saveCoefficient(coefficientFile)
