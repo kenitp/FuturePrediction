@@ -1,11 +1,5 @@
 from covid19_Param import *
 
-cmd_file     = '_GetCmd\getCovid19Data.cmd'
-csv_dir_path = '_InData/Covid-19'
-csv_path     = csv_dir_path + '/time_series_covid19_confirmed_global.csv'
-out_dir_path = './_OutData/Covid-19'
-coefficientFile = out_dir_path + '/Coefficient.csv'
-
 def makeParamsAll(df):
     params = []
     for index in df.index:
@@ -36,14 +30,11 @@ def main():
     # CParams = makeParamsAll(Covid19Param.df)
 
     for param in CParams:
-        title = createTitle(param.title)
+        title = param.createTitle(param.title)
         title_head = 'Covid-19_'
         print('[START]: ' + title)
-        firstDate, y_array_count = param.getCountData(param)
-        popt_g, popt_l = calcCoefficients(param, y_array_count)               # 係数の計算
-        createGraph(firstDate, y_array_count, title_head, title , 
-                    param.limitTimes, popt_g, popt_l, out_dir_path)    # グラフ作成
-        Covid19Param.addCoefficient(title, datetime.today().strftime('%Y%m%d'), popt_g, popt_l)
+        param.doPredict(title_head, title , out_dir_path)
+        Covid19Param.addCoefficient(title, datetime.today().strftime('%Y%m%d'), param.popt_g, param.popt_l)
         print('[END]: ' + title + '\r\n')
 
     Covid19Param.saveCoefficient(coefficientFile)
