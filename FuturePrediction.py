@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import math
+import random
 from scipy.optimize import curve_fit
 from datetime import datetime
 from datetime import timedelta
@@ -38,8 +39,18 @@ class PredictParam():
         self.r_squared_match = ''
         for key, func in self.predictFunc.items():
             if (self.iniParams.get(key)[0] == 1):
-                self.iniParams.get(key)[0] = self.y_array_count[-1]
+                self.iniParams[key] = self.__getRandomIniParams(self.y_array_count[-1])
             popt, pcov, r_squared = self.__calcCurveFitting(self.iniParams.get(key), self.y_array_count, func)
+
+            if((r_squared < 0.7) or np.isnan(r_squared)):
+                print('   Retry...')
+                for i in range(50):
+                    self.iniParams[key] = self.__getRandomIniParams(self.y_array_count[-1])
+                    popt, pcov, r_squared = self.__calcCurveFitting(self.iniParams.get(key), self.y_array_count, func)
+                    if (0.7 < r_squared):
+                        print('     ---> Successfully')
+                        break
+
             self.popt[key] = popt
             self.pcov[key] = pcov
             self.r_squared[key] = r_squared
@@ -157,6 +168,10 @@ class PredictParam():
             tmpDays.append(cls.__calcOptimalRangeDate(y_array_count, range_max, popt.get(key), limitTimes, func))
         days = max(*tmpDays, len(y_array_count))
         return days
+
+    @staticmethod
+    def __getRandomIniParams(ini_K):
+        return [ini_K, random.random(), random.random()]
 
     @staticmethod
     def __calcCurveFitting(param_ini, y_array_count, curve_func):
