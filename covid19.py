@@ -7,6 +7,7 @@ def makeParamsAll(df):
     return params
 
 def main():
+    args = sys.argv
     os.makedirs(csv_dir_path, exist_ok=True)
     os.makedirs(out_dir_path, exist_ok=True)
 
@@ -26,8 +27,10 @@ def main():
                 Covid19Param(['France'        , '-'    ], csv_path, 500, coefficientFile),
                 Covid19Param(['Korea, South'  , '-'    ], csv_path, 500, coefficientFile)]
 
-    # # パラメータ作成(データ全部 ← 時間がかかる)
-    # CParams = makeParamsAll(Covid19Param.df)
+    if(1 < len(args)):
+        if (args[1] == '-a'):
+            # パラメータ作成(データ全部 ← 時間がかかる)
+            CParams = makeParamsAll(Covid19Param.df)
 
     for param in CParams:
         title = param.createTitle(param.title)

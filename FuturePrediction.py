@@ -34,14 +34,39 @@ class PredictParam():
     def __calcCoefficients(self):
         self.popt = {}
         self.pcov = {}
+        self.r_squared = {}
+        self.r_squared_match = ''
         for key, func in self.predictFunc.items():
-            popt, pcov = self.__calcCurveFitting(self.iniParams.get(key), self.y_array_count, func)
-            if (np.isnan(popt[0])):
-                print(key + ': ' + 'K = NaN')
-            else:
-                print(key + ': ' + 'K = '+ str(int(popt[0])))
+            popt, pcov, r_squared = self.__calcCurveFitting(self.iniParams.get(key), self.y_array_count, func)
             self.popt[key] = popt
             self.pcov[key] = pcov
+            self.r_squared[key] = r_squared
+
+        self.__findMostMatched()
+        self.__logoutCoefficients()
+        return
+
+    def __findMostMatched(self):
+        tmpMin = 1
+        for key, value in self.r_squared.items():
+            if not np.isnan(value):
+                if ((1.0 - value) < tmpMin):
+                    tmpKey = key
+                    tmpMin = 1.0 - value
+        if (tmpMin != 1):
+            self.r_squared_match = tmpKey
+        return
+
+    def __logoutCoefficients(self):
+        for key, value in self.popt.items():
+            if (np.isnan(value[0])):
+                print(' ' + key + ': ' + 'K = NaN')
+            else:
+                tmpStr = ' ' + key + ': ' + 'K = '+ str(int(value[0])) + '\tR^2 = ' + str(self.r_squared.get(key))
+                if (key == self.r_squared_match):
+                    print(tmpStr + ' *')
+                else:
+                    print(tmpStr)
         return
 
     def __createGraph(self, title_head, title, out_dir_path):
@@ -53,7 +78,10 @@ class PredictParam():
         fig = plt.figure()
         for key, func in self.predictFunc.items():
             if(self.popt.get(key)[0] < self.y_array_count[-1]*self.limitTimes):
-                plt.plot(x_array_date, func(x_array_index, *self.popt.get(key)), label=key)
+                labelStr = key + ' ($R^2$='+ str(round(self.r_squared.get(key),3))+')'
+                if(key == self.r_squared_match):
+                    labelStr = labelStr + ' *'
+                plt.plot(x_array_date, func(x_array_index, *self.popt.get(key)), label=labelStr)
 
         plt.plot(x_array_date[0:len(self.y_array_count)], self.y_array_count, label='Count')
         plt.legend()
@@ -132,7 +160,15 @@ class PredictParam():
         if (param_ini[0] == 1):
             param_ini[0] = y_array_count[-1]
         popt, pcov = curve_fit(curve_func, x_array_index, y_array_count, p0=param_ini, maxfev=100000000)
-        return popt, pcov
+
+        if not np.isnan(popt[0]):
+            residuals =  y_array_count- curve_func(x_array_index, *popt)
+            rss = np.sum(residuals**2)                                  #residual sum of squares = rss
+            tss = np.sum((y_array_count - np.mean(y_array_count))**2)   #total sum of squares = tss
+            r_squared = 1 - (rss / tss)
+        else:
+            r_squared = np.nan
+        return popt, pcov, r_squared
 
     @staticmethod
     def __calcOptimalRangeDate(y_array_count, range_max, popt, limitTimes, fit_func):
