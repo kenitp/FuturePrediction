@@ -1,4 +1,4 @@
-# 新型コロナ感染拡大予測
+# COVID-19 感染拡大予測
  
 新型コロナウイルスの感染者数(実績)データから、
 * ゴンペルツ曲線
@@ -26,6 +26,8 @@ git clone https://github.com/kenitp/FuturePrediction.git
 cd FuturePrediction
 python covid19.py
 ```
+## Options
+-a: All countries in data.
 
 # License
 This program is under [MIT license](https://en.wikipedia.org/wiki/MIT_License).

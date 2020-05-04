@@ -29,7 +29,7 @@ class PredictParam():
         self.title = title
         self.csvName = csvName
         self.limitTimes = limitTimes
-        self.iniParams = self.__getIniParams(title)
+        self.iniParams, self.lastR2 = self.__getIniParams(title)
         return
 
     def __calcCoefficients(self):
@@ -38,18 +38,56 @@ class PredictParam():
         self.r_squared = {}
         self.r_squared_match = ''
         for key, func in self.predictFunc.items():
-            if (self.iniParams.get(key)[0] == 1):
-                self.iniParams[key] = self.__getRandomIniParams(self.y_array_count[-1])
-            popt, pcov, r_squared = self.__calcCurveFitting(self.iniParams.get(key), self.y_array_count, func)
+            if ((self.iniParams.get(key)[0] == 1) or (np.isnan(self.iniParams.get(key)[0]))):
+                self.iniParams[key] = self.__getRandomIniParams(key, self.y_array_count[-1])
 
-            if((r_squared < 0.7) or np.isnan(r_squared)):
-                print('   Retry...')
+            # 前回値で初期化しておく
+            popt = self.iniParams[key]
+            r_squared = self.lastR2[key]
+            pcov = [] #self.lastPcov[key]     # ラストのpcovは覚えていない
+
+            # 収束先が最新実績値より低い場合は現実的ではないので最新実績値としておく
+            if (self.iniParams.get(key)[0] < self.y_array_count[-1]):
+                self.iniParams[key][0] = self.y_array_count[-1]
+            # 前回収束先が上限値より大きい場合は現実的ではないので上限値に丸めておく
+            if (self.y_array_count[-1] * self.limitTimes < self.iniParams.get(key)[0]):
+                self.iniParams[key][0] = self.y_array_count[-1] * self.limitTimes
+
+            bounds = self.__getBoundParams(key, self.y_array_count[-1], self.limitTimes)
+            tmp_popt, tmp_pcov, tmp_r_squared = self.__calcCurveFitting(self.iniParams.get(key), self.y_array_count, func, bounds)
+            update_flg = False
+
+            # 初回フィッティング時はとりあえず保持しておく
+            if(r_squared == np.nan) and (tmp_r_squared != np.nan):
+                popt = tmp_popt
+                pcov = tmp_pcov
+                r_squared = tmp_r_squared
+                update_flg = True
+
+            # 前回精度より今回精度の方が低い or フィッティングできなかった場合はリトライする
+            if(((1-r_squared) < (1-tmp_r_squared)) or np.isnan(tmp_r_squared) or tmp_r_squared < 0.8):
                 for i in range(50):
-                    self.iniParams[key] = self.__getRandomIniParams(self.y_array_count[-1])
-                    popt, pcov, r_squared = self.__calcCurveFitting(self.iniParams.get(key), self.y_array_count, func)
-                    if (0.7 < r_squared):
-                        print('     ---> Successfully')
-                        break
+                    self.iniParams[key] = self.__getRandomIniParams(key, self.y_array_count[-1])
+                    tmp_popt, tmp_pcov, tmp_r_squared = self.__calcCurveFitting(self.iniParams.get(key), self.y_array_count, func, bounds)
+                    # よりフィッティング精度の良いものが見つかったら更新して終了
+                    if not np.isnan(tmp_r_squared):
+                        if(np.isnan(r_squared) or (1-tmp_r_squared) < (1-r_squared)):
+                            # print('    ---> Successfully (' + str(i) + ': ' + str(r_squared) + ', ' + str(tmp_r_squared) + ')')
+                            popt = tmp_popt
+                            pcov = tmp_pcov
+                            r_squared = tmp_r_squared
+                            update_flg = True
+                            if(0.95 < r_squared):
+                                break
+            else:
+                # 今回の方が良かった
+                popt = tmp_popt
+                pcov = tmp_pcov
+                r_squared = tmp_r_squared
+                update_flg = True
+
+            # if(update_flg == False):
+            #     print('    ---> Use Last Value (No Update: ' + key + ')')
 
             self.popt[key] = popt
             self.pcov[key] = pcov
@@ -73,9 +111,9 @@ class PredictParam():
     def __logoutCoefficients(self):
         for key, value in self.popt.items():
             if (np.isnan(value[0])):
-                print(' ' + key + ': ' + 'K = NaN')
+                print('  ' + key + ': ' + 'K = NaN')
             else:
-                tmpStr = ' ' + key + ': ' + 'K = '+ str(int(value[0])) + '\tR^2 = ' + str(self.r_squared.get(key))
+                tmpStr = '  ' + key + ': ' + 'K = '+ str(int(value[0])) + '\tR^2 = ' + str(self.r_squared.get(key))
                 if (key == self.r_squared_match):
                     print(tmpStr + ' *')
                 else:
@@ -84,7 +122,7 @@ class PredictParam():
 
     def __createGraph(self, title_head, title, out_dir_path):
         days = self.__calcGraphRangeDate(self.y_array_count, 5000, self.popt, self.limitTimes)
-        print('DAYS: ' + str(days))
+        print('  DAYS: ' + str(days))
 
         # 日付のリスト生成()
         x_array_date, x_array_index = self.createDateArray(self.firstDate, days)
@@ -116,6 +154,7 @@ class PredictParam():
     def __getIniParams(cls, title):
         indexKey = cls.createTitle(title)
         iniParams = {}
+        lastR2 = {}
         if (indexKey in cls.coefficientDf.index):
             tmpDf = cls.coefficientDf.fillna(1)
             tmpLastValues = tmpDf.loc[cls.createTitle(title)].tail(1)
@@ -123,11 +162,13 @@ class PredictParam():
                 iniParams[key] = [float(tmpLastValues['K('+key[0]+')'].iat[0]),
                                   float(tmpLastValues['b('+key[0]+')'].iat[0]),
                                   float(tmpLastValues['c('+key[0]+')'].iat[0])]
+                lastR2[key]    = float(tmpLastValues['R2('+key[0]+')'].iat[0])
         else:
             for key, func in cls.predictFunc.items():
                 iniParams[key] = [1.0, 1.0, 1.0]
+                lastR2[key]    = np.nan
 
-        return iniParams
+        return iniParams, lastR2
 
     @classmethod
     def readCoefficient(cls, file):
@@ -170,27 +211,61 @@ class PredictParam():
         return days
 
     @staticmethod
-    def __getRandomIniParams(ini_K):
-        return [ini_K, random.random(), random.random()]
+    def __getRandomIniParams(key, ini_K):
+        if (key == 'Gompertz'):
+            iniParams = [ini_K, random.random(), random.random()]
+        elif (key == 'Logistic'):
+            iniParams = [ini_K, random.uniform(0, ini_K), random.random()]
+        else:
+            iniParams = [ini_K, random.random(), random.random()]
+        return iniParams
 
     @staticmethod
-    def __calcCurveFitting(param_ini, y_array_count, curve_func):
-        x_array_index = createIndex(len(y_array_count))
-        popt, pcov = curve_fit(curve_func, x_array_index, y_array_count, p0=param_ini, maxfev=100000000)
-
-        if not np.isnan(popt[0]):
-            residuals =  y_array_count- curve_func(x_array_index, *popt)
-            rss = np.sum(residuals**2)                                  #residual sum of squares = rss
-            tss = np.sum((y_array_count - np.mean(y_array_count))**2)   #total sum of squares = tss
-            r_squared = 1 - (rss / tss)
+    def __getBoundParams(key, latestCount, limitTimes):
+        tmpMin = latestCount
+        if (tmpMin < 1.0):
+            tmpMin = 1.0
+        if (key == 'Gompertz'):
+            bounds = ((tmpMin-1, 0.0, 0.0), (tmpMin*limitTimes, 1.0, np.inf))
+        elif (key == 'Logistic'):
+            bounds = ((tmpMin-1, 0.0, 0.0), (tmpMin*limitTimes, np.inf, np.inf))
         else:
-            r_squared = np.nan
+            bounds = ((tmpMin-1, 0.0, 0.0), (tmpMin*limitTimes, np.inf, np.inf))
+        return bounds
+
+    @staticmethod
+    def __calcCurveFitting(param_ini, y_array_count, curve_func, param_bounds):
+        x_array_index = createIndex(len(y_array_count))
+        r_squared = np.nan
+
+        try:
+            popt, pcov = curve_fit(curve_func, x_array_index, y_array_count, p0=param_ini, bounds=param_bounds)
+            if not np.isnan(popt[0]):
+                residuals =  y_array_count- curve_func(x_array_index, *popt)
+                rss = np.sum(residuals**2)                                  #residual sum of squares = rss
+                tss = np.sum((y_array_count - np.mean(y_array_count))**2)   #total sum of squares = tss
+                if (tss != 0):
+                    r_squared = 1 - (rss / tss)
+                else:
+                    r_squared = -np.inf
+
+        except ValueError as error:
+            popt = [np.nan, np.nan, np.nan]
+            pcov = np.nan
+            print('   ERROR: ' + str(error))
+            print('    param_i' + str(param_ini))
+            print('    param_b' + str(param_bounds))
+        except RuntimeError as error:
+            popt = [np.nan, np.nan, np.nan]
+            pcov = np.nan
+            #print('   FAIL: ' + str(error) + ' Retry again!')
+
         return popt, pcov, r_squared
 
     @staticmethod
     def __calcOptimalRangeDate(y_array_count, range_max, popt, limitTimes, fit_func):
         days = len(y_array_count)
-        if (popt[0] != np.nan):
+        if not np.isnan(popt[0]):
             if (popt[0] < y_array_count[-1]*limitTimes):
                 for x in range(range_max,0,-1):
                     if( (int(fit_func(x, *popt)) - int(fit_func(x-1, *popt))) > int(fit_func(x, *popt) * 0.0001) ):

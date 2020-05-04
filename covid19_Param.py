@@ -20,8 +20,8 @@ class Covid19Param(PredictParam):
     def readCoronaCsv(cls, path):
         df_in = pd.read_csv(path)
         df_in.columns.name = 'date'
-        df_in = df_in.drop('Lat', axis=1)
-        df_in = df_in.drop('Long', axis=1)
+        df_in.drop('Lat', axis=1, inplace=True)
+        df_in.drop('Long', axis=1, inplace=True)
         df_in['Province/State'] = df_in['Province/State'].fillna('-')
         df_in = df_in.set_index(['Country/Region','Province/State'])
         df_in.columns = pd.to_datetime(df_in.columns)
