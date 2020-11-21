@@ -1,3 +1,6 @@
 __pycache__
 _OutData
 _InData
+_ref
+.vscode
+*.code-workspace

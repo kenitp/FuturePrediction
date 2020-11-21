@@ -65,7 +65,7 @@ class PredictParam():
                 update_flg = True
 
             # 前回精度より今回精度の方が低い or フィッティングできなかった場合はリトライする
-            if(((1-r_squared) < (1-tmp_r_squared)) or np.isnan(tmp_r_squared) or tmp_r_squared < 0.8):
+            if(((1-r_squared) < (1-tmp_r_squared)) or np.isnan(tmp_r_squared) or tmp_r_squared < 0.990):
                 for i in range(50):
                     self.iniParams[key] = self.__getRandomIniParams(key, self.y_array_count[-1])
                     tmp_popt, tmp_pcov, tmp_r_squared = self.__calcCurveFitting(self.iniParams.get(key), self.y_array_count, func, bounds)
@@ -77,7 +77,7 @@ class PredictParam():
                             pcov = tmp_pcov
                             r_squared = tmp_r_squared
                             update_flg = True
-                            if(0.95 < r_squared):
+                            if(0.995 < r_squared):
                                 break
             else:
                 # 今回の方が良かった
@@ -91,7 +91,7 @@ class PredictParam():
 
             self.popt[key] = popt
             self.pcov[key] = pcov
-            self.r_squared[key] = r_squared
+            self.r_squared[key] = tmp_r_squared
 
         self.__findMostMatched()
         self.__logoutCoefficients()
