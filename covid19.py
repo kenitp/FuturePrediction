@@ -1,47 +1,65 @@
-from covid19_Param import *
+# pylint: disable=C0114,C0115,C0116
+import os
+import sys
+from datetime import datetime
+from covid19_Param import (
+    Covid19Param,
+    CSV_PATH,
+    COEFFICIENT_FILE,
+    CSV_DIR_PATH,
+    OUT_DIR_PATH,
+    CMD_FILE,
+)  # pylint: disable=C0301
 
-def makeParamsAll(df):
+
+def make_params_all(dateframe):
     params = []
-    for index in df.index:
-        params.append(Covid19Param(index, csv_path, 500, coefficientFile))
+    for index in dateframe.index:
+        params.append(Covid19Param(index, CSV_PATH, 500))
     return params
+
 
 def main():
     args = sys.argv
-    os.makedirs(csv_dir_path, exist_ok=True)
-    os.makedirs(out_dir_path, exist_ok=True)
+    os.makedirs(CSV_DIR_PATH, exist_ok=True)
+    os.makedirs(OUT_DIR_PATH, exist_ok=True)
 
-    os.system(cmd_file)
+    os.system(CMD_FILE)
 
     # CSV読み込み
-    Covid19Param.readCoronaCsv(csv_path)
-    Covid19Param.readCoefficient(coefficientFile)
+    Covid19Param.read_corona_csv(CSV_PATH)
+    Covid19Param.read_coefficient(COEFFICIENT_FILE)
 
     # パラメータ作成 (一部抽出した国だけ)
-    CParams = [ Covid19Param(['Japan'         , '-'    ], csv_path, 500, coefficientFile),
-                Covid19Param(['US'            , '-'    ], csv_path, 500, coefficientFile),
-                Covid19Param(['Italy'         , '-'    ], csv_path, 500, coefficientFile),
-                Covid19Param(['China'         , 'Hubei'], csv_path, 500, coefficientFile),
-                Covid19Param(['Spain'         , '-'    ], csv_path, 500, coefficientFile),
-                Covid19Param(['United Kingdom', '-'    ], csv_path, 500, coefficientFile),
-                Covid19Param(['France'        , '-'    ], csv_path, 500, coefficientFile),
-                Covid19Param(['Korea, South'  , '-'    ], csv_path, 500, coefficientFile)]
+    c_params = [
+        Covid19Param(["Japan", "-"], CSV_PATH, 500),
+        Covid19Param(["US", "-"], CSV_PATH, 500),
+        Covid19Param(["Italy", "-"], CSV_PATH, 500),
+        Covid19Param(["China", "Hubei"], CSV_PATH, 500),
+        Covid19Param(["Spain", "-"], CSV_PATH, 500),
+        Covid19Param(["United Kingdom", "-"], CSV_PATH, 500),
+        Covid19Param(["France", "-"], CSV_PATH, 500),
+        Covid19Param(["Korea, South", "-"], CSV_PATH, 500),
+    ]
 
-    if(1 < len(args)):
-        if (args[1] == '-a'):
+    if 1 < len(args):
+        if args[1] == "-a":
             # パラメータ作成(データ全部 ← 時間がかかる)
-            CParams = makeParamsAll(Covid19Param.df)
+            c_params = make_params_all(Covid19Param.data_df)
 
-    for param in CParams:
-        title = param.createTitle(param.title)
-        title_head = 'Covid-19_'
-        print('[START]: ' + title)
-        param.doPredict(title_head, title , out_dir_path)
-        Covid19Param.addCoefficient(title, datetime.today().strftime('%Y%m%d'), param.popt, param.r_squared)
-        print('[END]: ' + title + '\r\n')
+    for param in c_params:
+        title = param.create_title(param.title)
+        title_head = "Covid-19_"
+        print("[START]: " + title)
+        param.do_predict(title_head, title, OUT_DIR_PATH)
+        Covid19Param.add_coefficient(
+            title, datetime.today().strftime("%Y%m%d"), param.popt, param.r_squared
+        )
+        print("[END]: " + title + "\r\n")
 
-    Covid19Param.saveCoefficient(coefficientFile)
+    Covid19Param.save_coefficient(COEFFICIENT_FILE)
     return
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
