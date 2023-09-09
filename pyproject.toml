@@ -20,7 +20,11 @@ build-backend = "hatchling.build"
 
 [tool.rye]
 managed = true
-dev-dependencies = []
+dev-dependencies = [
+    "mypy>=1.5.1",
+    "black>=23.9.0",
+    "flake8>=5.0.4",
+]
 
 [tool.hatch.metadata]
 allow-direct-references = true

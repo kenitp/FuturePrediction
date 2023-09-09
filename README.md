@@ -1,12 +1,12 @@
-# COVID-19 Š´õŠg‘å—\‘ª
+# COVID-19 æ„ŸæŸ“æ‹¡å¤§äºˆæ¸¬
  
-VŒ^ƒRƒƒiƒEƒCƒ‹ƒX‚ÌŠ´õŽÒ”(ŽÀÑ)ƒf[ƒ^‚©‚çA
-* ƒSƒ“ƒyƒ‹ƒc‹Èü
-* ƒƒWƒXƒeƒBƒbƒN‹Èü
+æ–°åž‹ã‚³ãƒ­ãƒŠã‚¦ã‚¤ãƒ«ã‚¹ã®æ„ŸæŸ“è€…æ•°(å®Ÿç¸¾)ãƒ‡ãƒ¼ã‚¿ã‹ã‚‰ã€
+* ã‚´ãƒ³ãƒšãƒ«ãƒ„æ›²ç·š
+* ãƒ­ã‚¸ã‚¹ãƒ†ã‚£ãƒƒã‚¯æ›²ç·š
 
-‚É‚Ä¡Œã‚ÌŠg‘å‚ð—\‘ª‚·‚éƒvƒƒOƒ‰ƒ€
+ã«ã¦ä»Šå¾Œã®æ‹¡å¤§ã‚’äºˆæ¸¬ã™ã‚‹ãƒ—ãƒ­ã‚°ãƒ©ãƒ 
 
-Š´õŽÒ”‚ÌŒ³ƒf[ƒ^‚ÍˆÈ‰º‚æ‚èŽæ“¾‚µ‚Ä‚¢‚Ü‚·B
+æ„ŸæŸ“è€…æ•°ã®å…ƒãƒ‡ãƒ¼ã‚¿ã¯ä»¥ä¸‹ã‚ˆã‚Šå–å¾—ã—ã¦ã„ã¾ã™ã€‚
 
 https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv
 
