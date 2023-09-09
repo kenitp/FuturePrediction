@@ -1,7 +1,9 @@
 # pylint: disable=C0114,C0115,C0116
+from typing import List
 import os
 import sys
 from datetime import datetime
+import pandas as pd
 from covid19_Param import (
     Covid19Param,
     CSV_PATH,
@@ -12,7 +14,7 @@ from covid19_Param import (
 )  # pylint: disable=C0301
 
 
-def make_params_all(dateframe):
+def make_params_all(dateframe: pd.DataFrame) -> List[Covid19Param]:
     params = []
     for index in dateframe.index:
         params.append(Covid19Param(index, CSV_PATH, 500))

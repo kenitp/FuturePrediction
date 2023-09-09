@@ -1,4 +1,5 @@
 # pylint: disable=C0114,C0115,C0116,C0103
+from typing import List
 import os
 import math
 import random
@@ -27,7 +28,7 @@ class PredictParam:
     coefficient_df = None
     predictFunc = {"Gompertz": gompertz_curve, "Logistic": logistic_curve}
 
-    def __init__(self, title, csv_name: str, limit_times: int):
+    def __init__(self, title: List[str], csv_name: str, limit_times: int) -> None:
         self.title = title
         self.csv = csv_name
         self.limit_times = limit_times
@@ -36,7 +37,7 @@ class PredictParam:
         self.pcov = None
         self.r_squared = None
         self.r_squared_match = None
-        self.y_array_count = []
+        self.y_array_count: List[int] = []
         self.first_date = None
         return
 
@@ -50,7 +51,7 @@ class PredictParam:
                 np.isnan(self.ini_params.get(key)[0])
             ):
                 self.ini_params[key] = self.__get_random_ini_params(
-                    key, self.y_array_count[-1]
+                    key, self.y_array_count.iloc[-1]
                 )
 
             # 前回値で初期化しておく
@@ -59,14 +60,17 @@ class PredictParam:
             pcov = []  # self.lastPcov[key]     # ラストのpcovは覚えていない
 
             # 収束先が最新実績値より低い場合は現実的ではないので最新実績値としておく
-            if self.ini_params.get(key)[0] < self.y_array_count[-1]:
-                self.ini_params[key][0] = self.y_array_count[-1]
+            if self.ini_params.get(key)[0] < self.y_array_count.iloc[-1]:
+                self.ini_params[key][0] = self.y_array_count.iloc[-1]
             # 前回収束先が上限値より大きい場合は現実的ではないので上限値に丸めておく
-            if self.y_array_count[-1] * self.limit_times < self.ini_params.get(key)[0]:
-                self.ini_params[key][0] = self.y_array_count[-1] * self.limit_times
+            if (
+                self.y_array_count.iloc[-1] * self.limit_times
+                < self.ini_params.get(key)[0]
+            ):
+                self.ini_params[key][0] = self.y_array_count.iloc[-1] * self.limit_times
 
             bounds = self.__get_bound_params(
-                key, self.y_array_count[-1], self.limit_times
+                key, self.y_array_count.iloc[-1], self.limit_times
             )
             tmp_popt, tmp_pcov, tmp_r_squared = self.__calc_curve_fitting(
                 self.ini_params.get(key), self.y_array_count, func, bounds
@@ -86,7 +90,7 @@ class PredictParam:
             ):
                 for i in range(50):  # pylint: disable=W0612
                     self.ini_params[key] = self.__get_random_ini_params(
-                        key, self.y_array_count[-1]
+                        key, self.y_array_count.iloc[-1]
                     )
                     tmp_popt, tmp_pcov, tmp_r_squared = self.__calc_curve_fitting(
                         self.ini_params.get(key), self.y_array_count, func, bounds
@@ -155,7 +159,7 @@ class PredictParam:
 
         plt.figure()
         for key, func in self.predictFunc.items():
-            if self.popt.get(key)[0] < self.y_array_count[-1] * self.limit_times:
+            if self.popt.get(key)[0] < self.y_array_count.iloc[-1] * self.limit_times:
                 label_str = (
                     key + " ($R^2$=" + str(round(self.r_squared.get(key), 3)) + ")"
                 )
@@ -219,7 +223,7 @@ class PredictParam:
         return ini_params, last_r2
 
     @classmethod
-    def read_coefficient(cls, file):
+    def read_coefficient(cls, file: str) -> None:
         if not os.path.isfile(file):
             col = ""
             for key, func in cls.predictFunc.items():  # pylint: disable=W0612
@@ -235,7 +239,7 @@ class PredictParam:
                     + key[0]
                     + ")"
                 )
-            with open(file, "a") as f:
+            with open(file, "a", encoding="utf-8") as f:
                 print("Main,Date" + col, file=f)
 
         df_in = pd.read_csv(file)
@@ -286,7 +290,7 @@ class PredictParam:
         return ini_params
 
     @staticmethod
-    def __get_bound_params(key, latest_cnt, limit_times):
+    def __get_bound_params(key: str, latest_cnt, limit_times: int):
         tmp_min = latest_cnt
         if tmp_min < 1.0:
             tmp_min = 1.0
@@ -304,8 +308,12 @@ class PredictParam:
         r_squared = np.nan
 
         try:
-            popt, pcov = curve_fit(
-                func, x_arr_idx, y_arr_cnt, p0=param_ini, bounds=param_bounds
+            popt, pcov, *_ = curve_fit(
+                f=func,
+                xdata=x_arr_idx,
+                ydata=y_arr_cnt,
+                p0=param_ini,
+                bounds=param_bounds,
             )
             if not np.isnan(popt[0]):
                 residuals = y_arr_cnt - func(x_arr_idx, *popt)
@@ -335,7 +343,7 @@ class PredictParam:
     def __calc_optimal_range_date(y_array_count, range_max, popt, limit_times, func):
         days = len(y_array_count)
         if not np.isnan(popt[0]):
-            if popt[0] < y_array_count[-1] * limit_times:
+            if popt[0] < y_array_count.iloc[-1] * limit_times:
                 for x in range(range_max, 0, -1):  # pylint: disable=C0103
                     if (int(func(x, *popt)) - int(func(x - 1, *popt))) > int(
                         func(x, *popt) * 0.0001
@@ -345,7 +353,7 @@ class PredictParam:
         return days
 
     @staticmethod
-    def create_date_array(first_date, day_num):
+    def create_date_array(first_date: datetime, day_num):
         # 集計開始日
         start_date = datetime(
             first_date.year, first_date.month, first_date.day, 0, 0, 0
@@ -358,7 +366,7 @@ class PredictParam:
         return x_array_date, x_array_index
 
     @staticmethod
-    def create_title(title_list):
+    def create_title(title_list: List[str]) -> str:
         title = title_list[0]
         if len(title_list) == 2:
             if title_list[1] != "-":
@@ -366,6 +374,6 @@ class PredictParam:
         return title
 
 
-def create_index(size):
+def create_index(size: int):
     # 0始まりのindexの作成
     return np.arange(0, size, 1)
