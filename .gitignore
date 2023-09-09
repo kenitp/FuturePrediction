@@ -1,6 +1,15 @@
-__pycache__
+# python generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# venv
+.venv
+
+# user
 _OutData
 _InData
 _ref
-.vscode
-*.code-workspace

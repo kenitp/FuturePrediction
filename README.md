@@ -1,19 +1,20 @@
-# COVID-19 æ„ŸæŸ“æ‹¡å¤§äºˆæ¸¬
+# COVID-19 Š´õŠg‘å—\‘ª
  
-æ–°å‹ã‚³ãƒ­ãƒŠã‚¦ã‚¤ãƒ«ã‚¹ã®æ„ŸæŸ“è€…æ•°(å®Ÿç¸¾)ãƒ‡ãƒ¼ã‚¿ã‹ã‚‰ã€
-* ã‚´ãƒ³ãƒšãƒ«ãƒ„æ›²ç·š
-* ãƒ­ã‚¸ã‚¹ãƒ†ã‚£ãƒƒã‚¯æ›²ç·š
+VŒ^ƒRƒƒiƒEƒCƒ‹ƒX‚ÌŠ´õÒ”(ÀÑ)ƒf[ƒ^‚©‚çA
+* ƒSƒ“ƒyƒ‹ƒc‹Èü
+* ƒƒWƒXƒeƒBƒbƒN‹Èü
 
-ã«ã¦ä»Šå¾Œã®æ‹¡å¤§ã‚’äºˆæ¸¬ã™ã‚‹ãƒ—ãƒ­ã‚°ãƒ©ãƒ 
+‚É‚Ä¡Œã‚ÌŠg‘å‚ğ—\‘ª‚·‚éƒvƒƒOƒ‰ƒ€
 
-æ„ŸæŸ“è€…æ•°ã®å…ƒãƒ‡ãƒ¼ã‚¿ã¯ä»¥ä¸‹ã‚ˆã‚Šå–å¾—ã—ã¦ã„ã¾ã™ã€‚
+Š´õÒ”‚ÌŒ³ƒf[ƒ^‚ÍˆÈ‰º‚æ‚èæ“¾‚µ‚Ä‚¢‚Ü‚·B
 
 https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv
 
 # Requirement
 
 * Windows 10 
-* python 3.7.5
+* python 3.11.5
+* Rye
 * pandas
 * scipy
 * numpy
@@ -24,7 +25,8 @@ https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_d
 ```bash
 git clone https://github.com/kenitp/FuturePrediction.git
 cd FuturePrediction
-python covid19.py
+rye sync
+rye run python covid19.py
 ```
 ## Options
 -a: All countries in data.
